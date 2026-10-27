@@ -8,6 +8,7 @@ import { onNextTick } from '@proton/pass/utils/time/next-tick';
 import { useIFrameAppController, useIFrameAppState } from '../../../../../../../lib/components/Inline/IFrameApp';
 import { InlinePortMessageType } from '../../../inline.messages';
 import { DROPDOWN_FOCUS_TIMEOUT } from '../../dropdown.focus';
+import { focusFirstOption, onListboxFocusChange, onListboxKeydownFactory } from '../listbox.utils';
 
 export type IFrameFocusControllerValue = { focusRef: RefObject<HTMLInputElement> };
 
@@ -74,9 +75,26 @@ export const DropdownFocusController: FC<PropsWithChildren> = ({ children }) => 
             window.addEventListener('focus', onFocus);
             window.addEventListener('mousedown', onMouseDown, { capture: true });
 
+            /** Keyboard dismissal of the dropdown: Escape and Tab close the
+             * dropdown while focus is within the iframe's listbox (or its root
+             * fallback) and move focus back to the anchored field. */
+            const onKeydown = onListboxKeydownFactory({
+                close: () => controller.close({ refocus: 'silent', userAction: true }),
+            });
+
+            /** Roving tabindex: ensure the focused option is the dropdown's
+             * single tab stop whenever focus changes within the iframe. */
+            const onFocusIn = onNextTick(onListboxFocusChange);
+
+            document.addEventListener('keydown', onKeydown, { capture: true });
+            document.addEventListener('focusin', onFocusIn, { capture: true });
+
             const unregister = controller.registerHandler(
                 InlinePortMessageType.DROPDOWN_FOCUS,
-                onNextTick(() => (focusRef.current ?? window)?.focus())
+                onNextTick((message) => {
+                    (focusRef.current ?? window)?.focus();
+                    if (message.payload?.firstItem) void focusFirstOption();
+                })
             );
 
             return () => {
@@ -86,9 +104,11 @@ export const DropdownFocusController: FC<PropsWithChildren> = ({ children }) => 
                 window.removeEventListener('focus', onFocus);
                 window.removeEventListener('blur', onBlur);
                 window.removeEventListener('mousedown', onMouseDown, { capture: true });
+                document.removeEventListener('keydown', onKeydown, { capture: true });
+                document.removeEventListener('focusin', onFocusIn, { capture: true });
             };
         }
-    }, [visible]);
+    }, [visible, controller]);
 
     return <IFrameFocusControllerContext.Provider value={context}>{children}</IFrameFocusControllerContext.Provider>;
 };

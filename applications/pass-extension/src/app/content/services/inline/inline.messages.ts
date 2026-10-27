@@ -50,12 +50,20 @@ type PasskeyRelayedMessages =
 export type IFramePosition = Partial<Rect>;
 export type IFrameEndpoint = 'notification' | 'dropdown';
 
+/** Options forwarded alongside dropdown focus requests. */
+export type DropdownFocusOptions = {
+    /** Focus the first dropdown option instead of the default focus target */
+    firstItem?: boolean;
+};
+
 export type InlineCloseOptions = {
     /** User discarded the inline app */
     discard?: boolean;
-    /** Flag indicitating we should refocus a field */
-    refocus?: boolean;
-    /** Wether close action was user-initiated */
+    /** Flag indicating we should refocus a field. When set to `'silent'`, the
+     * anchor field is refocused without re-triggering its focus-driven toggle
+     * (prevents the dropdown from re-opening on the refocus event). */
+    refocus?: boolean | 'silent';
+    /** Whether close action was user-initiated */
     userAction?: boolean;
 };
 
@@ -87,8 +95,8 @@ export type InlineMessage<T extends InlineMessageType = InlineMessageType> = Ext
     | { type: InlinePortMessageType.DROPDOWN_ACTION; payload: DropdownActions }
     | { type: InlinePortMessageType.DROPDOWN_BLURRED }
     | { type: InlinePortMessageType.DROPDOWN_FOCUSED }
-    | { type: InlinePortMessageType.DROPDOWN_FOCUS }
-    | { type: InlinePortMessageType.DROPDOWN_FOCUS_REQUEST }
+    | { type: InlinePortMessageType.DROPDOWN_FOCUS; payload?: DropdownFocusOptions }
+    | { type: InlinePortMessageType.DROPDOWN_FOCUS_REQUEST; payload?: DropdownFocusOptions }
     | { type: InlinePortMessageType.IFRAME_CLOSE; payload: InlineCloseOptions }
     | { type: InlinePortMessageType.IFRAME_CONNECTED; payload: { framePort: string; id: IFrameEndpoint } }
     | { type: InlinePortMessageType.IFRAME_DIMENSIONS; payload: { height: number; width?: number } }

@@ -102,13 +102,16 @@ export const AutosuggestPassword: FC<Props> = ({ action, config, clipboardSettin
                 }
             />
 
-            <ListItem
-                subTheme={SubTheme.RED}
-                icon={{ type: 'icon', icon: IcKey }}
-                title={label}
-                subTitle={<span className="text-monospace">{getCharsGroupedByColor(generator.password)}</span>}
-                onClick={autofillPassword}
-            />
+            <div role="listbox">
+                <ListItem
+                    subTheme={SubTheme.RED}
+                    icon={{ type: 'icon', icon: IcKey }}
+                    title={label}
+                    subTitle={<span className="text-monospace">{getCharsGroupedByColor(generator.password)}</span>}
+                    onClick={autofillPassword}
+                    role="option"
+                />
+            </div>
             {advanced && (
                 <div className="flex-column flex gap-y-2 px-4 pb-3 text-sm ui-red">
                     <hr className="m-0" />

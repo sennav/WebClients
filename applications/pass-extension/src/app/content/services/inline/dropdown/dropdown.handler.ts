@@ -1,6 +1,7 @@
 import type { Maybe, MaybeNull } from '@proton/pass/types/utils';
 import { createListenerStore } from '@proton/pass/utils/listener/factory';
 import { wait } from '@proton/shared/lib/helpers/promise';
+import noop from '@proton/utils/noop';
 
 import { SCROLL_OPTIONS, onActualScroll } from '../../../../../lib/utils/dom';
 import { MESSAGE_HOP_DELAY } from '../../../constants.static';
@@ -10,6 +11,7 @@ import type { DropdownHandler } from './dropdown.abstract';
 import {
     matchesDropdownAnchor,
     onBackdropClick,
+    onFieldTabFactory,
     onFocusChangeFactory,
     validateDropdownRequest,
 } from './dropdown.utils';
@@ -58,6 +60,7 @@ export const createDropdownHandler = (registry: InlineRegistry): DropdownHandler
                 const close = () => dropdown.close(request);
                 const onFocusChange = onFocusChangeFactory(dropdown, request);
                 const onKeyDown = (evt: KeyboardEvent) => evt.key === 'Escape' && close();
+                const onFieldTab = field ? onFieldTabFactory({ field, getDropdown: () => registry.dropdown }) : noop;
 
                 const parent = form?.scrollParent(field?.element);
 
@@ -74,6 +77,7 @@ export const createDropdownHandler = (registry: InlineRegistry): DropdownHandler
                 listeners.addListener(window, 'blur', onFocusChange);
                 listeners.addListener(window, 'mousedown', onBackdropClick(getAnchorField, close));
                 listeners.addListener(document, 'keydown', onKeyDown, { capture: true });
+                if (field) listeners.addListener(field.element, 'keydown', onFieldTab, { capture: true });
                 listeners.addListener(window, 'wheel', close, { capture: true, once: true });
 
                 if (parent) listeners.addListener(parent, 'scroll', onActualScroll(parent, close), SCROLL_OPTIONS);

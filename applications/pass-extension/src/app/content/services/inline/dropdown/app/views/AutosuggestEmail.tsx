@@ -141,78 +141,82 @@ export const AutosuggestEmail: FC<Props> = ({ action, aliasCreationDisabled, pre
                     />
                 }
             />
-            {userEmail && (
-                <ListItem
-                    title={c('Title').t`Use my email`}
-                    disabled={!userEmail}
-                    subTitle={
-                        userEmail ?? (
-                            <span className="block flex items-center">
-                                <CircleLoader className="mr-1" />
-                                <span>{c('Info').t`Loading...`}</span>
-                            </span>
-                        )
-                    }
-                    icon={{ type: 'icon', icon: IcEnvelope }}
-                    onClick={() => autofillEmail(userEmail)}
-                />
-            )}
-            {!aliasCreationDisabled && (
-                <ListItem
-                    title={
-                        needsUpgrade
-                            ? c('Info').t`Upgrade ${PASS_APP_NAME}`
-                            : // translator: action of hiding my email, in contrast with the previous label "Use my email"
-                              c('Title').t`Hide my email`
-                    }
-                    autogrow
-                    subTitle={(() => {
-                        if (loadingText) {
-                            return (
-                                <span className="block flex items-center flex-nowrap">
+            <div role="listbox">
+                {userEmail && (
+                    <ListItem
+                        title={c('Title').t`Use my email`}
+                        disabled={!userEmail}
+                        subTitle={
+                            userEmail ?? (
+                                <span className="block flex items-center">
                                     <CircleLoader className="mr-1" />
-                                    <span className="block text-ellipsis">{loadingText}</span>
+                                    <span>{c('Info').t`Loading...`}</span>
                                 </span>
-                            );
+                            )
                         }
+                        icon={{ type: 'icon', icon: IcEnvelope }}
+                        onClick={() => autofillEmail(userEmail)}
+                        role="option"
+                    />
+                )}
+                {!aliasCreationDisabled && (
+                    <ListItem
+                        title={
+                            needsUpgrade
+                                ? c('Info').t`Upgrade ${PASS_APP_NAME}`
+                                : // translator: action of hiding my email, in contrast with the previous label "Use my email"
+                                  c('Title').t`Hide my email`
+                        }
+                        autogrow
+                        subTitle={(() => {
+                            if (loadingText) {
+                                return (
+                                    <span className="block flex items-center flex-nowrap">
+                                        <CircleLoader className="mr-1" />
+                                        <span className="block text-ellipsis">{loadingText}</span>
+                                    </span>
+                                );
+                            }
 
-                        if (needsUpgrade) {
-                            return (
-                                <span className="text-sm block">{c('Warning')
-                                    .t`Your plan does not allow you to create more aliases`}</span>
-                            );
-                        }
+                            if (needsUpgrade) {
+                                return (
+                                    <span className="text-sm block">{c('Warning')
+                                        .t`Your plan does not allow you to create more aliases`}</span>
+                                );
+                            }
 
-                        if (error) {
-                            return (
-                                <span className="color-danger text-sm block">
-                                    {c('Error').t`Cannot create alias (${error}).`}{' '}
-                                    <span className="text-semibold text-underline">{c('Action').t`Try again`}</span>
-                                </span>
-                            );
-                        }
+                            if (error) {
+                                return (
+                                    <span className="color-danger text-sm block">
+                                        {c('Error').t`Cannot create alias (${error}).`}{' '}
+                                        <span className="text-semibold text-underline">{c('Action').t`Try again`}</span>
+                                    </span>
+                                );
+                            }
 
-                        if (validAliasOptions) {
-                            return (
-                                <AliasPreview
-                                    prefix={prefix}
-                                    suffix={aliasOptions.suffixes[0].suffix}
-                                    standalone
-                                    key="alias-preview"
-                                />
-                            );
-                        }
-                    })()}
-                    icon={{ type: 'icon', icon: needsUpgrade ? IcArrowWithinSquare : IcAlias }}
-                    subTheme={SubTheme.TEAL}
-                    disabled={loadingText !== null}
-                    onClick={(() => {
-                        if (needsUpgrade) return navigateToUpgrade;
-                        if (error) return requestAliasOptions;
-                        if (validAliasOptions) return () => createAlias(aliasOptions);
-                    })()}
-                />
-            )}
+                            if (validAliasOptions) {
+                                return (
+                                    <AliasPreview
+                                        prefix={prefix}
+                                        suffix={aliasOptions.suffixes[0].suffix}
+                                        standalone
+                                        key="alias-preview"
+                                    />
+                                );
+                            }
+                        })()}
+                        icon={{ type: 'icon', icon: needsUpgrade ? IcArrowWithinSquare : IcAlias }}
+                        subTheme={SubTheme.TEAL}
+                        disabled={loadingText !== null}
+                        onClick={(() => {
+                            if (needsUpgrade) return navigateToUpgrade;
+                            if (error) return requestAliasOptions;
+                            if (validAliasOptions) return () => createAlias(aliasOptions);
+                        })()}
+                        role="option"
+                    />
+                )}
+            </div>
         </>
     );
 };

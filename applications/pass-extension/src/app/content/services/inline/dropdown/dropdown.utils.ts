@@ -21,14 +21,50 @@ import { DROPDOWN_WIDTH } from '../../../constants.static';
 import { withContext } from '../../../context/context';
 import { getAutofillPageTelemetryDimensions } from '../../../utils/autofill-telemetry';
 import type { FieldHandle } from '../../form/field';
-import type { InlineCloseOptions } from '../inline.messages';
+import type { DropdownFocusOptions, InlineCloseOptions } from '../inline.messages';
 import type { DropdownHandler } from './dropdown.abstract';
-import type { DropdownActions, DropdownAnchor, DropdownRequest } from './dropdown.app';
+import type { DropdownActions, DropdownAnchor, DropdownApp, DropdownRequest } from './dropdown.app';
 
 export const onCloseEffects = onNextTick((field: FieldHandle, { refocus, userAction }: InlineCloseOptions) => {
-    if (refocus) field.focus({ preventAction: false });
+    if (refocus) field.focus({ preventAction: refocus === 'silent' });
     else if (!userAction && !isActiveElement(field.element)) field.icon?.detach();
 });
+
+/** Intercept plain `Tab` keypresses on the anchored field while the
+ * dropdown is visible in order to hand keyboard focus over to the
+ * dropdown's first listbox option. This keeps the dropdown a keyboard-
+ * reachable stop in the page's tab order while the host page's Tab
+ * behaviour is left untouched whenever the dropdown is closed. */
+export const onFieldTabFactory =
+    ({ field, getDropdown }: { field: FieldHandle; getDropdown: () => MaybeNull<DropdownApp> }) =>
+    (evt: KeyboardEvent) => {
+        const isPlainTab =
+            evt.key === 'Tab' &&
+            !evt.shiftKey &&
+            !evt.altKey &&
+            !evt.ctrlKey &&
+            !evt.metaKey &&
+            !evt.isComposing &&
+            !evt.defaultPrevented;
+
+        /** IME composition, page keybinds or an already swallowed event:
+         * default Tab behaviour must be preserved. */
+        if (!isPlainTab) return;
+
+        const dropdown = getDropdown();
+
+        /** Only intercept while this field's dropdown is open and this
+         * field is still the focused anchor (re-check `activeElement`
+         * at event time to guard against detached/re-rendered fields). */
+        if (!dropdown?.getState().visible) return;
+        if (!field.element.isConnected || !isActiveElement(field.element)) return;
+
+        evt.preventDefault();
+        evt.stopPropagation();
+
+        const focusOptions: DropdownFocusOptions = { firstItem: true };
+        dropdown.requestFocus(focusOptions);
+    };
 
 export const onFocusChangeFactory = (dropdown: DropdownHandler, anchor: DropdownAnchor) =>
     onNextTick(async (_: FocusEvent) => {

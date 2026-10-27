@@ -16,7 +16,7 @@ import type { DropdownAction } from '../../../constants.runtime';
 import { DROPDOWN_IFRAME_SRC } from '../../../constants.runtime';
 import { DROPDOWN_MIN_HEIGHT, DROPDOWN_WIDTH } from '../../../constants.static';
 import { type InlineAppHandler, createInlineApp } from '../inline.app';
-import type { InlineCloseOptions } from '../inline.messages';
+import type { DropdownFocusOptions, InlineCloseOptions } from '../inline.messages';
 import { InlinePortMessageType } from '../inline.messages';
 import type { PopoverController } from '../inline.popover';
 import type { InlineFieldTarget, InlineFrameTarget } from './dropdown.abstract';
@@ -50,6 +50,7 @@ export interface DropdownApp extends InlineAppHandler<DropdownRequest> {
      * UX decisions with regards to dropdown interaction */
     anchor: MaybeNull<DropdownAnchor>;
     focused: boolean;
+    requestFocus: (options?: DropdownFocusOptions) => void;
 }
 
 export const createDropdown = (popover: PopoverController): DropdownApp => {
@@ -200,6 +201,7 @@ export const createDropdown = (popover: PopoverController): DropdownApp => {
         }),
 
         sendMessage: iframe.sendPortMessage,
+        requestFocus: (options?: DropdownFocusOptions) => focus.requestFocus(options),
         subscribe: iframe.subscribe,
     };
 

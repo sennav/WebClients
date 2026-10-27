@@ -1,4 +1,4 @@
-import type { FC, ReactNode } from 'react';
+import type { AriaRole, FC, ReactNode } from 'react';
 
 import DropdownMenuButton from '@proton/components/components/dropdown/DropdownMenuButton';
 import { SubTheme } from '@proton/pass/components/Layout/Theme/types';
@@ -19,8 +19,10 @@ type Props = {
     disabled?: boolean;
     fakeButton?: boolean;
     icon: ListItemIconProps;
+    role?: AriaRole;
     subTheme?: SubTheme;
     subTitle: ReactNode;
+    tabIndex?: number;
     title?: ReactNode;
     onClick?: () => void;
 };
@@ -32,8 +34,10 @@ export const ListItem: FC<Props> = ({
     disabled,
     fakeButton,
     icon,
+    role,
     subTheme = SubTheme.VIOLET,
     subTitle,
+    tabIndex,
     title,
     onClick,
 }) => (
@@ -48,6 +52,8 @@ export const ListItem: FC<Props> = ({
         style={autogrow ? { '--min-h-custom': `${LIST_ITEM_HEIGHT}rem` } : { '--h-custom': `${LIST_ITEM_HEIGHT}rem` }}
         onClick={onClick}
         disabled={disabled}
+        role={role}
+        tabIndex={tabIndex}
     >
         <div className="flex items-center gap-3">
             <ListItemIcon {...icon} />

@@ -73,6 +73,7 @@ export const AutofillCC: FC<Props> = (payload) => {
                         title={c('Info').t`Upgrade ${PASS_APP_NAME}`}
                         subTitle={c('Warning').t`Your plan only allows you to autofill from your first two vaults`}
                         onClick={navigateToUpgrade}
+                        role="option"
                         autogrow
                     />
                 ),
@@ -101,6 +102,7 @@ export const AutofillCC: FC<Props> = (payload) => {
                             });
                             controller.close({ userAction: true });
                         }}
+                        role="option"
                         subTheme={SubTheme.LIME}
                     />
                 )) ?? []),
@@ -125,14 +127,17 @@ export const AutofillCC: FC<Props> = (payload) => {
                 }
             />
             {dropdownItems.length > 0 ? (
-                <ScrollableItemsList>{dropdownItems}</ScrollableItemsList>
+                <ScrollableItemsList listbox>{dropdownItems}</ScrollableItemsList>
             ) : (
-                <ListItem
-                    icon={{ type: 'status', icon: PassIconStatus.ACTIVE }}
-                    onClick={controller.close}
-                    title={PASS_APP_NAME}
-                    subTitle={c('Info').t`No credit cards found`}
-                />
+                <ScrollableItemsList listbox>
+                    <ListItem
+                        icon={{ type: 'status', icon: PassIconStatus.ACTIVE }}
+                        onClick={controller.close}
+                        title={PASS_APP_NAME}
+                        subTitle={c('Info').t`No credit cards found`}
+                        role="option"
+                    />
+                </ScrollableItemsList>
             )}
         </>
     );

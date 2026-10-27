@@ -10,6 +10,7 @@ import { contentScriptMessage, sendMessage } from '../../../../../lib/message/se
 import { WorkerMessageType } from '../../../../../types/messages';
 import { kFocusTrapSelector } from '../../../constants.static';
 import type { InlineApp } from '../inline.app';
+import type { DropdownFocusOptions, InlineMessageWithSender } from '../inline.messages';
 import { InlinePortMessageType } from '../inline.messages';
 import type { PopoverController } from '../inline.popover';
 import type { InlineFrameTarget } from './dropdown.abstract';
@@ -28,6 +29,7 @@ export interface DropdownFocusController {
     focused: boolean;
     willFocus: boolean;
     disconnect: () => void;
+    requestFocus: (options?: DropdownFocusOptions) => void;
 }
 
 type DropdownFocusManagerOptions = {
@@ -134,11 +136,12 @@ export const createDropdownFocusController = ({
         return isFocusReleased();
     };
 
-    /** Handles focus recovery when page focus-lock implementations interfere with dropdown focus.
+    /** Handles focus recovery when page focus-lock implementations interfere with dropdown focus,
+     * and programmatic focus hand-off requests (e.g. Tab interception on the anchor field).
      * Strategy: blur the anchor field and any active element to release the focus trap, then
      * request dropdown focus. The `willFocus` flag provides a grace period during which blur events
      * on the dropdown are ignored, preventing premature closing during the focus transition. */
-    const onFocusRequest = asyncLock(async () => {
+    const acquireFocus = asyncLock(async (focusOptions?: DropdownFocusOptions) => {
         onWillFocus();
 
         if (!hasFocus()) {
@@ -150,13 +153,20 @@ export const createDropdownFocusController = ({
                      * so the reported `DropdownApp::focused` state stays truthy across
                      * the handoff and a concurrent focus/blur handler reading it
                      * (`onFocusChangeFactory`) doesn't close the dropdown. */
-                    iframe.sendPortMessage({ type: InlinePortMessageType.DROPDOWN_FOCUS });
+                    iframe.sendPortMessage({
+                        type: InlinePortMessageType.DROPDOWN_FOCUS,
+                        payload: focusOptions,
+                    });
                 })
                 .catch(disconnect);
         }
     });
 
-    iframe.registerMessageHandler(InlinePortMessageType.DROPDOWN_FOCUS_REQUEST, onFocusRequest);
+    iframe.registerMessageHandler(
+        InlinePortMessageType.DROPDOWN_FOCUS_REQUEST,
+        (message: MaybeNull<InlineMessageWithSender<InlinePortMessageType.DROPDOWN_FOCUS_REQUEST>>) =>
+            acquireFocus(message?.payload)
+    );
     iframe.registerMessageHandler(InlinePortMessageType.DROPDOWN_FOCUSED, onWillFocus);
     iframe.registerMessageHandler(InlinePortMessageType.DROPDOWN_BLURRED, onWillBlur);
 
@@ -168,5 +178,8 @@ export const createDropdownFocusController = ({
             return state.willFocus;
         },
         disconnect,
+        requestFocus: (options?: DropdownFocusOptions) => {
+            void acquireFocus(options);
+        },
     };
 };

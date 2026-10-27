@@ -74,6 +74,7 @@ export const AutofillIdentity: FC<Props> = ({ action, ...payload }) => {
                               subTitle={c('Warning')
                                   .t`Your plan only allows you to autofill from your first two vaults`}
                               onClick={navigateToUpgrade}
+                              role="option"
                               autogrow
                           />
                       ),
@@ -90,6 +91,7 @@ export const AutofillIdentity: FC<Props> = ({ action, ...payload }) => {
                                   });
                                   controller.close({ userAction: true });
                               }}
+                              role="option"
                           />
                       )),
                   ].filter(truthy)
@@ -113,14 +115,17 @@ export const AutofillIdentity: FC<Props> = ({ action, ...payload }) => {
                 }
             />
             {dropdownItems.length > 0 ? (
-                <ScrollableItemsList>{dropdownItems}</ScrollableItemsList>
+                <ScrollableItemsList listbox>{dropdownItems}</ScrollableItemsList>
             ) : (
-                <ListItem
-                    icon={{ type: 'status', icon: PassIconStatus.ACTIVE }}
-                    onClick={controller.close}
-                    title={PASS_APP_NAME}
-                    subTitle={c('Info').t`No identity item found`}
-                />
+                <ScrollableItemsList listbox>
+                    <ListItem
+                        icon={{ type: 'status', icon: PassIconStatus.ACTIVE }}
+                        onClick={controller.close}
+                        title={PASS_APP_NAME}
+                        subTitle={c('Info').t`No identity item found`}
+                        role="option"
+                    />
+                </ScrollableItemsList>
             )}
         </>
     );
