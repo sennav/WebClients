@@ -1,6 +1,7 @@
 import type { HTMLFieldElement } from '@protontech/autofill';
 import type { FieldType } from '@protontech/autofill/types';
 
+import type { Maybe } from '@proton/pass/types/utils';
 import { isActiveElement } from '@proton/pass/utils/dom/active-element';
 import { isInputElement, isSelectElement } from '@proton/pass/utils/dom/predicates';
 import { seq } from '@proton/pass/utils/fp/promises';
@@ -8,7 +9,7 @@ import { safeAsyncCall } from '@proton/pass/utils/fp/safe-call';
 import { wait } from '@proton/shared/lib/helpers/promise';
 import noop from '@proton/utils/noop';
 
-import type { FieldElement } from '../form/field';
+import type { FieldElement, FieldHandle } from '../form/field';
 
 export type AutofillOptions = {
     /** If `true` will use a "paste-strategy" for
@@ -157,3 +158,12 @@ export const createAutofill = (el: FieldElement) =>
         if (isInputElement(el)) return autofillInputElement(el, data, options);
         if (isSelectElement(el)) return autofillSelectElement(el, data);
     });
+
+/** Priority policy for the "autofill best match" keyboard command:
+ * the currently focused eligible field wins, else the last focused
+ * one (tracked in `field.focus.registry`), else the first eligible
+ * field encountered (fresh page load, nothing focused yet). */
+export const pickBestMatchField = (loginFields: FieldHandle[], lastFocused: FieldHandle | null): Maybe<FieldHandle> =>
+    loginFields.find((field) => isActiveElement(field.element)) ??
+    (lastFocused ? loginFields.find((field) => field === lastFocused) : undefined) ??
+    loginFields[0];

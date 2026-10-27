@@ -61,6 +61,7 @@ export const Shortcuts: FC = () => {
                 setShortcuts(
                     resolveShortcuts(commands, {
                         _execute_action: c('Info').t`Open the ${PASS_APP_NAME} popup`,
+                        'autofill-best-match': c('Info').t`Autofill the best matching login item`,
                         'open-larger-window': c('Info').t`Open ${PASS_APP_NAME} in a larger window`,
                     })
                 )

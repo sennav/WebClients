@@ -28,9 +28,13 @@ import { getAutofillPageTelemetryDimensions } from '../../utils/autofill-telemet
 import { sendContentScriptTelemetry } from '../../utils/telemetry';
 import type { FrameMessageHandler } from '../client/client.channel';
 import type { FieldHandle } from '../form/field';
+import { getLastFocusedField } from '../form/field.focus.registry';
 import type { FormHandle } from '../form/form';
+import type { DropdownRequest } from '../inline/dropdown/dropdown.app';
+import { intoDropdownAction } from '../inline/dropdown/dropdown.utils';
 import { autofillCCFields } from './autofill.cc';
 import { autofillIdentityFields } from './autofill.identity';
+import { pickBestMatchField } from './autofill.utils';
 
 type AutofillCounters = {
     /** Number of autofillable login credentials for the current
@@ -380,6 +384,80 @@ export const createAutofillService = ({ controller }: ContentScriptContextFactor
         }
     );
 
+    /** "Autofill best match" keyboard command handler (see the `autofill-best-match`
+     * extension command). Resolves the target field in this frame with the
+     * following priority:
+     *   1. the currently focused login field
+     *   2. the last focused login field of this frame (page may have lost focus)
+     *   3. the first eligible login field (fresh page load, nothing focused yet)
+     * Then fills the top-ranked login candidate using the same `AUTOFILL_ACTION`
+     * pipeline as clicking the first item of the autofill dropdown. */
+    const autofillBestMatch = withContext<() => Promise<{ filled: boolean }>>(async (ctx) => {
+        if (!ctx || !ctx.getState().authorized) return { filled: false };
+
+        const loginFields = ctx.service.formManager
+            .getFields()
+            .filter((field) => field.element.isConnected && field.action?.type === DropdownAction.AUTOFILL_LOGIN);
+
+        if (loginFields.length === 0) return { filled: false };
+
+        const lastFocused = getLastFocusedField();
+        const target = pickBestMatchField(loginFields, lastFocused);
+        if (!target) return { filled: false };
+
+        const request: DropdownRequest = {
+            type: 'field',
+            action: DropdownAction.AUTOFILL_LOGIN,
+            autofocused: false,
+            autofilled: target.autofilled !== null,
+            field: target,
+        };
+
+        /* reuses the dropdown's request-resolution to derive the field's
+         * frameId/fieldId/formId and the autofill origin scope. */
+        const action = await intoDropdownAction(request).catch(() => null);
+        if (!action || action.action !== DropdownAction.AUTOFILL_LOGIN) return { filled: false };
+
+        const res = await sendMessage.on(
+            contentScriptMessage({ type: WorkerMessageType.AUTOFILL_LOGIN_QUERY, payload: {} }),
+            (res) => res
+        );
+        const best = res.type === 'success' ? res.items[0] : undefined;
+        if (!best) return { filled: false };
+
+        /* close any dropdown anchored to the target: the fill pipeline
+         * refocuses the field with `preventAction` so a stale dropdown
+         * iframe would otherwise linger open next to it. */
+        ctx.service.inline.dropdown.close({ type: 'field', field: target });
+
+        await sendMessage(
+            contentScriptMessage({
+                type: WorkerMessageType.AUTOFILL_ACTION,
+                payload: {
+                    type: 'login',
+                    itemId: best.itemId,
+                    shareId: best.shareId,
+                    fieldId: action.fieldId,
+                    formId: action.formId,
+                    frameId: action.frameId,
+                    origin: action.origin,
+                    frameOrigin: action.frameOrigin,
+                },
+            })
+        );
+
+        return { filled: true };
+    });
+
+    const onBestMatchRequest: FrameMessageHandler<WorkerMessageType.AUTOFILL_BEST_MATCH> = (_1, sendResponse) => {
+        void autofillBestMatch()
+            .then(sendResponse)
+            .catch(() => sendResponse({ filled: false }));
+        return true;
+    };
+
+    controller.channel.register(WorkerMessageType.AUTOFILL_BEST_MATCH, onBestMatchRequest);
+
     controller.channel.register(WorkerMessageType.AUTOFILL_SEQUENCE, onAutofillRequest);
 
     return {
@@ -392,6 +470,7 @@ export const createAutofillService = ({ controller }: ContentScriptContextFactor
         autofillLogin,
         autofillOTP,
         autofillPassword,
+        autofillBestMatch,
         evaluateOTP,
         getCredentialsCount,
         getCreditCardsCount,
@@ -399,6 +478,7 @@ export const createAutofillService = ({ controller }: ContentScriptContextFactor
         sync,
         destroy: () => {
             controller.channel.unregister(WorkerMessageType.AUTOFILL_SEQUENCE, onAutofillRequest);
+            controller.channel.unregister(WorkerMessageType.AUTOFILL_BEST_MATCH, onBestMatchRequest);
         },
     };
 };

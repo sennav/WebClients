@@ -77,6 +77,12 @@
                 "default": "Ctrl+Shift+L"
             },
             "description": "Open Proton Pass in a larger window"
+        },
+        "autofill-best-match": {
+            "suggested_key": {
+                "default": "Ctrl+Shift+F"
+            },
+            "description": "Autofill the best matching login item on this page"
         }
     },
     "icons": {

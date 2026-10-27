@@ -103,6 +103,7 @@ export enum WorkerMessageType {
 
     AUTOFILL_ACTION = 'AUTOFILL_ACTION',
     AUTOFILL_CC_QUERY = 'AUTOFILL_CC_QUERY',
+    AUTOFILL_BEST_MATCH = 'AUTOFILL_BEST_MATCH',
     AUTOFILL_IDENTITY_QUERY = 'AUTOFILL_IDENTITY_QUERY',
     AUTOFILL_LOGIN_QUERY = 'AUTOFILL_LOGIN_QUERY',
     AUTOFILL_OTP_CHECK = 'AUTOFILL_OTP_CHECK',
@@ -211,6 +212,7 @@ type AuthUnlockMessage = WithPayload<WorkerMessageType.AUTH_UNLOCK, UnlockDTO>;
 
 type AutofillActionMessage = WithPayload<WorkerMessageType.AUTOFILL_ACTION, AutofillActionDTO>;
 type AutofillCCQueryMessage = { type: WorkerMessageType.AUTOFILL_CC_QUERY };
+type AutofillBestMatchMessage = WithPayload<WorkerMessageType.AUTOFILL_BEST_MATCH, {}>;
 type AutofillIdentityQueryMessage = { type: WorkerMessageType.AUTOFILL_IDENTITY_QUERY };
 type AutofillLoginQueryMessage = WithPayload<WorkerMessageType.AUTOFILL_LOGIN_QUERY, AutofillQueryFilter>;
 type AutofillOTPCheckMessage = { type: WorkerMessageType.AUTOFILL_OTP_CHECK };
@@ -315,6 +317,7 @@ export type WorkerMessage =
     | AuthPullForkMessage
     | AuthUnlockMessage
     | AutofillActionMessage
+    | AutofillBestMatchMessage
     | AutofillCCQueryMessage
     | AutofillIdentityQueryMessage
     | AutofillLoginQueryMessage
@@ -414,6 +417,7 @@ type WorkerMessageResponseMap = {
     [WorkerMessageType.AUTH_INIT]: AppState;
     [WorkerMessageType.AUTH_PULL_FORK]: Result<PullForkResponse>;
     [WorkerMessageType.AUTH_UNLOCK]: Result<{}, { errorType?: NativeMessageErrorType }>;
+    [WorkerMessageType.AUTOFILL_BEST_MATCH]: { filled: boolean; reason?: string };
     [WorkerMessageType.AUTOFILL_CC_QUERY]: AutofillCCResult;
     [WorkerMessageType.AUTOFILL_IDENTITY_QUERY]: AutofillIdentityResult;
     [WorkerMessageType.AUTOFILL_LOGIN_QUERY]: AutofillLoginResult;

@@ -14,6 +14,7 @@ import { withContext } from '../../context/context';
 import type { ClientObserverEvent } from '../client/client.observer';
 import { InlinePortMessageType } from '../inline/inline.messages';
 import type { FieldHandle } from './field';
+import { trackFocusedField } from './field.focus.registry';
 import type { FormTracker } from './form.tracker';
 
 export interface FieldTracker {
@@ -81,6 +82,7 @@ export const createFieldTracker = withContext<(field: FieldHandle, formTracker?:
             if (state.focused) return;
             raf.cancel();
             state.focused = true;
+            trackFocusedField(field);
 
             const { action } = field;
             if (!action || field.actionPrevented) return;
