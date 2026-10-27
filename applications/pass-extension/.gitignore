@@ -30,3 +30,8 @@ xcuserdata/
 **/fastlane/Preview.html
 **/fastlane/screenshots
 **/fastlane/test_output
+
+# fork build artifacts & signing state
+/tools/.fork-version
+/web-ext-artifacts
+/proton-pass-*.zip
